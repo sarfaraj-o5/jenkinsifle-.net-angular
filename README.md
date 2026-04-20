@@ -115,4 +115,28 @@ The ‘credentials file’ will contain aws_access_key_id and aws_secret_access_
 ssh-copy-id sammy@your_server_address
 ssh-copy-id user_name@ip
 
+Creating Terraform Script for Spinning up Jenkins Master
+Creating Terraform Script for Spinning up Jenkins Master. Get terraform from terraform download page.
+
+We will need to set up the Security Group before setting up the instance.
+
+Now that we have a custom AMI and security groups for ourselves let’s use them to create a terraform instance.
+
+As mentioned before, we will be discussing multiple ways in which we can connect the slaves to Jenkins master. But it is already known that every time a new Jenkins comes up, it generates a unique password. Now there are two ways to deal with this, one is to wait for Jenkins to spin up and retrieve that password or just directly edit the admin password while creating Jenkins master. Here we will be discussing how to change the password when configuring Jenkins. (If you need the script to retrieve Jenkins password as soon as it gets created than comment and I will share that with you as well).
+
+Below is the user data to install Jenkins master, configure its password and install required packages.
+
+There is a lot of stuff that has been covered here. But the most tricky bit is changing Jenkins password. Here we are using a python script which uses brcypt to hash the plain text in Jenkins encryption format and xmlstarlet for replacing that password in the actual location. Also, we are using xmstarlet to edit the JNLP port for windows slave. Do remember initial username for Jenkins is admin.
+
+Command to run: Initialize terraform - terraform init , Check and apply - terraform plan -> terraform apply
+
+After successfully running apply command go to AWS console and check for a new instance coming up. Hit the <public ip="">:8080 and enter credentials as you had passed and you will have the Jenkins master for yourself ready to be used. </public>
+
+Note: I will be providing the terraform script and permission list of IAM roles for the user at the end of the blog.
+
+Creating Terraform Script for Spinning up Linux Slave and connect it to master
+We won't be creating a new image here rather use the same one that we used for Jenkins master.
+
+VPC will be same and updated Security groups for slave are below:
+
 
