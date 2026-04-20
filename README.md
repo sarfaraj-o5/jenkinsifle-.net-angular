@@ -139,4 +139,7 @@ We won't be creating a new image here rather use the same one that we used for J
 
 VPC will be same and updated Security groups for slave are below:
 
+Now that we have the required security groups in place it is time to bring into light terraform script for linux slave.
+
+And now the final piece of code, which is user-data of slave machine.
 
