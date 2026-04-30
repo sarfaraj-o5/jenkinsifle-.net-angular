@@ -143,3 +143,69 @@ Now that we have the required security groups in place it is time to bring into 
 
 And now the final piece of code, which is user-data of slave machine.
 
+This will not only create a node on Jenkins master but also attach it.
+
+Command to run: Initialize terraform - terraform init, Check and apply - terraform plan -> terraform apply
+
+One drawback of this is, if by any chance slave gets disconnected or goes down, it will remain on Jenkins master as offline, also it will not manually attach itself to Jenkins master.
+
+Some solutions for them are:
+
+1. Create a cron job on the slave which will run user-data after a certain interval.
+
+2. Use swarm plugin.
+
+3. As we are on AWS, we can even use Amazon EC2 Plugin.
+
+Maybe in a future blog, we will cover using both of these plugins as well.
+
+Using Packer to create AMI’s for Windows Slave
+Windows AMI will also be created using packer. All the pointers for Windows will remain as it were for Linux.
+
+Now when it comes to windows one should know that it does not behave the same way Linux does. For us to be able to communicate with this image an essential component required is WinRM. We set it up at the very beginning as part of user_data_file. Also, windows require user input for a lot of things and while automating it is not possible to provide it as it will break the flow of execution so we disable UAC and enable RDP so that we can connect to that machine from our local desktop for debugging if needed. And at last, we will execute install_windows.ps1 file which will set up our slave. Please note at the last we are calling two PowerShell scripts to generate random password every time a new machine is created. It is mandatory to have them or you will never be able to login into your machines.
+
+There are multiple user-data in the above code, let’s understand them in their order of appearance.
+
+SetUpWinRM.ps1:
+
+The content is pretty straightforward as it is just setting up WInRM. The only thing that matters here is the <powershell> and </powershell>. They are mandatory as packer will not be able to understand what is the type of script. Next, we come across disable-uac.ps1 & enable-rdp.ps1, and we have discussed their purpose before. The last user-data is the actual user-data that we need to install all the required packages in the AMI.
+
+Chocolatey: a blessing in disguise - Installing required applications in windows by scripting is a real headache as you have to write a lot of stuff just to install a single application but luckily for us we have chocolatey. It works as a package manager for windows and helps us install applications as we are installing packages on Linux. install_windows.ps1 has installation step for chocolatey and how it can be used to install other applications on windows.
+
+See, such a small script and you can get all the components to run your Windows application in no time (Kidding… This script actually takes around 20 minutes to run :P)
+
+Remaining user-data can be found here.
+
+Now that we have the image for ourselves let’s start with terraform script to make this machine a slave of your Jenkins master.
+
+Creating Terraform Script for Spinning up Windows Slave and Connect it to Master
+This time also we will first create the security groups and then create the slave machine from the same AMI that we developed above.
+
+Once security groups are in place we move towards creating the terraform file for windows machine itself. Windows can't connect to Jenkins master using SSH the method we used while connecting the Linux slave instead we have to use JNLP. A quick recap, when creating Jenkins master we used xmlstarlet to modify the JNLP port and also added rules in sg group to allow connection for JNLP. Also, we have opened the port for RDP so that if any issue occurs you can get in the machine and debug it.
+
+Finally, we reach the user-data for the terraform plan. It will download the required jar file, create a node on Jenkins and register itself as a slave.
+
+Command to run: Initialize terraform - terraform init, Check and apply - terraform plan -> terraform apply
+
+Same drawbacks are applicable here and the same solutions will work here as well.
+
+Congratulations! You have a Jenkins master with Windows and Linux slave attached to it.
+
+IAM roles for reference
+‍Jenkins Master
+
+Linux Slave
+
+Windows Slave
+
+Bonus:
+If you want to associate IAM permissions to the user but cannot assign FULL ACCESS here is a curated list below for reference:
+
+Packer Policy
+
+Terraform Policy
+
+Conclusion:
+This blog tries to highlight one of the ways in which we can use packer and Terraform to create AMI's which will serve as Jenkins master and slave. We not only covered their creation but also focused on how to associate security groups and checked some of the basic IAM roles that can be applied. Although we have covered almost all the possible scenarios but still depending on use case, the required changes would be very less and this can serve as a boiler plate code when beginning to plan your infrastructure on cloud.
+
+
